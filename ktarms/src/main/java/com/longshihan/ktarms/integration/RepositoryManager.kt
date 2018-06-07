@@ -1,12 +1,10 @@
 package com.longshihan.ktarms.integration
 
 import android.app.Application
-import android.app.Presentation
 import android.content.Context
-import android.support.v4.util.Preconditions
 import com.longshihan.ktarms.integration.cache.Cache
 import com.longshihan.ktarms.integration.cache.CacheType
-import io.rx_cache2.internal.ProcessorProviders
+import com.longshihan.ktarms.utils.Preconditions
 import io.rx_cache2.internal.RxCache
 import retrofit2.Retrofit
 import javax.inject.Inject
@@ -21,37 +19,68 @@ import javax.inject.Singleton
 
 @Singleton
 class RepositoryManager @Inject
-constructor():IRepositoryManager{
+constructor() : IRepositoryManager {
 
     @Inject
-    internal var mRetrofit:Lazy<Retrofit>?=null
+    internal var mRetrofit: dagger.Lazy<Retrofit>? = null
 
     @Inject
-    internal var mRxCache:Lazy<RxCache>?=null
+    internal var mRxCache: dagger.Lazy<RxCache>? = null
 
     @Inject
-    internal var mApplication:Application?=null
+    internal var mApplication: Application? = null
 
     @Inject
-    internal var mCachefactory: Cache.Factory?=null
+    internal var mCachefactory: Cache.Factory? = null
 
-    internal var mRetrofitServiceCache:Cache<String,Any>?=null
+    internal var mRetrofitServiceCache: Cache<String, Any>? = null
 
-    internal var mCacheServiceCache:Cache<String,Any>?=null
+    internal var mCacheServiceCache: Cache<String, Any>? = null
 
 
-    override fun  <T> obtainRetrofitService(service: Class<T>): T {
+    /**
+     * 根据传入的 Class 获取对应的 Retrofit service
+     *
+     * @param service
+     * @param <T>
+     * @return
+     */
+    @Synchronized override fun <T> obtainRetrofitService(service: Class<T>): T {
+        if (mCacheServiceCache == null)
+            mRetrofitServiceCache = mCachefactory!!.build(CacheType.CACHE_SERVICE_CACHE) as Cache<String, Any>
+        Preconditions.checkNotNull(mRetrofitServiceCache, "Cannot return null from a Cache.Factory#build(int) method")
+        var retrofitService= mRetrofitServiceCache!![service.canonicalName] as T?
+        if (retrofitService==null){
+            retrofitService=mRetrofit!!.get().create(service)
+            mRetrofitServiceCache!!.put(service.canonicalName,retrofitService!!)
+        }
+        return retrofitService
+    }
+    /**
+     * 根据传入的 Class 获取对应的 RxCache service
+     *
+     * @param cache
+     * @param <T>
+     * @return
+     */
+    @Synchronized override fun <T> obtainCacheService(cache: Class<T>): T {
         if (mCacheServiceCache==null)
-            mRetrofitServiceCache= mCachefactory?.build(CacheType.CACHE_SERVICE_CACHE) as Cache<String, Any>?
-        Preconditions.checkNotNull(mRetrofitServiceCache,"Cannot return null from a Cache.Factory#build(int) method")
+            mCacheServiceCache=mCachefactory!!.build(CacheType.CACHE_SERVICE_CACHE) as Cache<String, Any>
+        Preconditions.checkNotNull(mCacheServiceCache,"Cannot return null from a Cache.Factory#build(int) method")
+        var cacheService= mCacheServiceCache!![cache.canonicalName] as T?
+        if (cacheService==null){
+            cacheService=mRxCache!!.get().using(cache)
+            mCacheServiceCache!!.put(cache.canonicalName,cacheService!!)
+        }
+        return cacheService
     }
 
-    override fun <T> obtainCacheService(cache: Class<T>): T {
-    }
+    override fun getContext(): Context= mApplication!!
 
-    override fun getContext(): Context {
-    }
-
+    /**
+     * 清理所有缓存
+     */
     override fun clearAllCache() {
+        mRxCache!!.get().evictAll()
     }
 }

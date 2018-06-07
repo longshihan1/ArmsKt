@@ -18,7 +18,8 @@ ext {
                    rxlifecycleSdkVersion   : "1.0",
                    rxlifecycle2SdkVersion  : "2.2.1",
                    espressoSdkVersion      : "3.0.1",
-                   canarySdkVersion        : "1.5.4"
+                   canarySdkVersion        : "1.5.4",
+                   kotlinVersion : "1.2.30"
         ]
 
     dependencies = [
@@ -103,7 +104,9 @@ ext {
                 "logger"                   : "com.orhanobut:logger:2.2.0",
                 "canary-debug"             : "com.squareup.leakcanary:leakcanary-android:${version["canarySdkVersion"]}",
                 "canary-release"           : "com.squareup.leakcanary:leakcanary-android-no-op:${version["canarySdkVersion"]}",
-                "umeng-analytics"          : "com.umeng.analytics:analytics:6.0.1"
+                "umeng-analytics"          : "com.umeng.analytics:analytics:6.0.1",
+                kotlinStdlib            : "org.jetbrains.kotlin:kotlin-stdlib:${version["kotlinVersion"]}",
+                 kotlinReflect           : "org.jetbrains.kotlin:kotlin-reflect:${version["kotlinVersion"]}",
         ]
 
 
